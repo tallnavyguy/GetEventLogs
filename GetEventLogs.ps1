@@ -1,7 +1,7 @@
 # SCRIPT NAME               : GetEventLogs.ps1
 # VERSION                   : 1.0
 # CREATED DATE              : 03/19/2019
-# LAST UPDATE               : 03/20/2019
+# LAST UPDATE               : 03/22/2019
 # AUTHOR                    : Brian Hart
 # DESCRIPTION               : A simple PowerShell script that manages getting event logs from the 
 #                             Windows Event Log system and then exports them as CSV.  The columns
