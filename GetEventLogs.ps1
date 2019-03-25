@@ -1,7 +1,7 @@
 # SCRIPT NAME               : GetEventLogs.ps1
 # VERSION                   : 1.0
 # CREATED DATE              : 03/19/2019
-# LAST UPDATE               : 03/22/2019
+# LAST UPDATE               : 03/25/2019
 # AUTHOR                    : Brian Hart
 # DESCRIPTION               : A simple PowerShell script that manages getting event logs from the 
 #                             Windows Event Log system and then exports them as CSV.  The columns
@@ -32,7 +32,15 @@
 #                             exist beforehand.
 # -RemoteServers            : (Required). Set to localhost to specify the local machine, otherwise, this
 #                             param must be a comma-separated list of either NetBIOS machine names or 
-#                             IP addresses on a LAN, from which you want to pull the logs.
+#                             IP addresses on a LAN, from which you want to pull the logs.  The Loop-
+#                             back address (127.0.0.1) is not supported
+# -DesiredCount             : (Optional.)  Count of the number of records desired as output.  If this
+#                             parameter is equal to 1.
+#
+# -SortAscendingByTime      : (Optional.) If specified, this parameter returns the results in order by
+#                             time generated, with the most-recently-generated event at the bottom of
+#                             the list.   Results are sorted in the reverse order if this parameter
+#                             is not included.  Sorting results by descending order is the default.
 
 ###############################################################################
 # Parse command-line args (if any) and ensure values will parse; stop the script execution
@@ -43,12 +51,11 @@ param (
     [Parameter(Mandatory = $false, ValueFromPipeline = $true)][string]$LogName = "Security",
     [Parameter(Mandatory = $false, ValueFromPipeline = $true)][int]$Id = 4657,
     [Parameter(Mandatory = $false, ValueFromPipeline = $true)][DateTime]$FromDate = [DateTime]::MinValue,
-    [Parameter(Mandatory = $false, ValueFromPipeline = $true)][DateTime]$ToDate = [DateTime]::MaxValue,
-    [Parameter(Mandatory = $false,  ValueFromPipeline = $true)][int]$DesiredCount = [int]::MinValue,
+    [Parameter(Mandatory = $false, ValueFromPipeline = $true)][DateTime]$ToDate = Get-Date,
+    [Parameter(Mandatory = $false,  ValueFromPipeline = $true)][int]$DesiredCount = 1,
     [Parameter(Mandatory = $true,  ValueFromPipeline = $true)][string]$CsvPath = "",
     [Parameter(Mandatory = $false,  ValueFromPipeline = $true)][string]$RemoteServers = "localhost",
-    [Parameter(Mandatory = $false,  ValueFromPipeline = $true)][switch]$SortAscendingByTime = $true,
-    [Parameter(Mandatory = $false,  ValueFromPipeline = $true)][switch]$SortDescendingByTime = $false
+    [Parameter(Mandatory = $false,  ValueFromPipeline = $true)][switch]$SortAscendingByTime = $false,
  )
 
 ###############################################################################
@@ -82,23 +89,50 @@ function Main {
     # from and to dates being in the wrong order etc.
     #
     
-    "Reading events from the {0} log..." -f $LogName | Write-Host
-
     $global:CmdToInvoke = "Get-EventLog -LogName {0} " -f $LogName
 
-    ParseDesiredCount -DesiredCount $DesiredCount
+    if ((IsValidCount -DesiredCount $DesiredCount) -eq $false) {
+        $LASTEXITCODE = -1;
+        Return
+    }
+    
+    ParseDesiredCount -Count $DesiredCount
 
+    if ((IsValidDateRange -FromDate $FromDate -ToDate $ToDate) -eq $false) {
+        $LASTEXITCODE = -1;
+        Return   
+    }
+    
     ParseDateRange -FromDate $FromDate -ToDate $ToDate
 
-    $global:CmdToInvoke = $global:CmdToInvoke + "| Sort-Object TimeGenerated -Descending | Select UserName, TimeGenerated | Format-Table"
+    $global:CmdToInvoke = $global:CmdToInvoke + "| Sort-Object TimeGenerated -Descending | Select UserName, TimeGenerated | Export-Csv " + $CsvPath
 
-    $list = (Invoke-Expression -Command $global:CmdToInvoke)
+    Invoke-Expression -Command $global:CmdToInvoke
+}
 
-    if ($list.Count -eq 0) {
-        Write-Host "No results returned."
-    } else {
-        "{0} results found." -f ($list.Count - 4)| Write-Host
-    }
+###############################################################################
+# IsValidCount function
+#
+# FUNCTION NAME             : IsValidCount
+# CREATED DATE              : 03/25/2019
+# LAST UPDATE               : 03/25/2019
+# AUTHOR                    : Brian Hart
+# IN                        : -Count: Variable that supposedly holds a count;
+#                             i.e. a value that is an integer greater than zero.
+# MODIFIES                  : Nothing
+# RETURNS                   : $true if the value specified is an integer that
+#                             is greater than zero. $false otherwise.
+# DESCRIPTION               : Runs validation rules that determine whether a
+#                             specific variable actually holds a count, e.g.,
+#                             of desired records.
+###############################################################################
+function IsValidCount {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $false, ValueFromPipeline = $true)][int]$DesiredCount = [int]::MinValue
+    )
+    
+    Return $DesiredCount -gt 0
 }
 
 ###############################################################################
@@ -106,7 +140,7 @@ function Main {
 #
 # FUNCTION NAME             : ParseDesiredCount
 # CREATED DATE              : 03/19/2019
-# LAST UPDATE               : 03/20/2019
+# LAST UPDATE               : 03/25/2019
 # AUTHOR                    : Brian Hart
 # IN                        : -DesiredCount: Count of records you want returned.
 #                             If this parameter is not specified then nothing is 
@@ -128,23 +162,74 @@ function Main {
 function ParseDesiredCount {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $false,  ValueFromPipeline = $true)][int]$DesiredCount = [int]::MinValue
+        [Parameter(Mandatory = $false, ValueFromPipeline = $true)][int]$DesiredCount = [int]::MinValue
     )
 
-    if ($DesiredCount -eq [int]::MinValue) {
+    if ($DesiredCount -le 0) {
         Return
     }
 
-    switch($true) {
-        {$DesiredCount -le 0} {
-            Return
-        }
-        {$DesiredCount -gt 0} {
-            $DesiredCountParam = "-Newest {0}" -f $DesiredCount
+    $DesiredCountParam = "-Newest {0}" -f $DesiredCount
 
-            $global:CmdToInvoke = $global:CmdToInvoke + ' ' + $DesiredCountParam
-        }
+    $global:CmdToInvoke = $global:CmdToInvoke + ' ' + $DesiredCountParam
+}
+
+###############################################################################
+# IsValidDateRange function
+#
+# FUNCTION NAME             : IsValidDateRange
+# CREATED DATE              : 03/25/2019
+# LAST UPDATE               : 03/25/2019
+# AUTHOR                    : Brian Hart
+# IN                        : -FromDate: DateTime value indicating the lower end
+#                             of the TimeGenerated value on which to filter records.
+#                             Required.
+#                           : -ToDate: DateTime value indicating the upper end of
+#                             the TimeGenerated value on which to filter records.
+#                             Required.
+# MODIFIES                  : Nothing
+# RETURNS                   : $true if the date range is valid; $false
+#                             otherwise.
+# DESCRIPTION               : A date range is supposed to consist of a 'From
+#                             Date' and a 'To Date', the 'From Date' coming first
+#                             and not being equal to the 'To Date'.  This
+#                             function runs validation rules to screen against
+#                             absurd things such as the From Date being after
+#                             the To Date or the To Date being before the From
+#                             Date, or one or the other date being in the future.
+#                             DateTime.MinValue and DateTime.MaxValue are allowed
+#                             inputs for the 
+###############################################################################
+function IsValidDateRange {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $false, ValueFromPipeline = $true)][DateTime]$FromDate = [DateTime]::MinValue,
+        [Parameter(Mandatory = $false, ValueFromPipeline = $true)][DateTime]$ToDate = [DateTime]::MaxValue
+    )
+    
+    # Get the time that it is now
+    $Now = Get-Date
+    
+    # The FromDate can't be in the future.  The FromDate can be
+    # equal to today's date.
+    if ($FromDate -gt $Now) {
+        Return $false
     }
+    
+    # The ToDate can't be in the future.  The ToDate can be 
+    # equal to today's date.
+    if ($ToDate -gt $Now) {
+        Return $false
+    }
+
+    # The FromDate can't be greater than the ToDate; although the 
+    # dates can be the same
+    if ($FromDate -gt $ToDate) {
+        Return $false
+    }
+    
+    # If we are still here, then the dates are valid
+    Return $true
 }
 
 ###############################################################################
@@ -152,7 +237,7 @@ function ParseDesiredCount {
 #
 # FUNCTION NAME             : ParseDateRange
 # CREATED DATE              : 03/19/2019
-# LAST UPDATE               : 03/20/2019
+# LAST UPDATE               : 03/25/2019
 # AUTHOR                    : Brian Hart
 # IN                        : -FromDate: DateTime value indicating the lower end
 #                             of the TimeGenerated value on which to filter records.
@@ -228,16 +313,6 @@ function ParseDateRange {
             Return
         }
     }
-}
-
-function bar {
-    [CmdletBinding()]
-    param (
-        [Parameter(ValueFromPipeline)]
-        [pscustomobject]$Thing
-    )
-
-    $Thing
 }
 
 . Main
