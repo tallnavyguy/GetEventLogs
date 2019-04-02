@@ -1,7 +1,7 @@
 # SCRIPT NAME               : GetEventLogs.ps1
 # VERSION                   : 1.0
 # CREATED DATE              : 03/19/2019
-# LAST UPDATE               : 03/25/2019
+# LAST UPDATE               : 04/02/2019
 # AUTHOR                    : Brian Hart
 # DESCRIPTION               : A simple PowerShell script that manages getting event logs from the 
 #                             Windows Event Log system and then exports them as CSV.  The columns
@@ -96,7 +96,7 @@ function Main {
         Return
     }
     
-    ParseDesiredCount -Count $DesiredCount
+    ParseDesiredCount -DesiredCount $DesiredCount
 
     if ((IsValidDateRange -FromDate $FromDate -ToDate $ToDate) -eq $false) {
         $LASTEXITCODE = -1;
@@ -117,7 +117,7 @@ function Main {
 # CREATED DATE              : 03/25/2019
 # LAST UPDATE               : 03/25/2019
 # AUTHOR                    : Brian Hart
-# IN                        : -Count: Variable that supposedly holds a count;
+# IN                        : -DesiredCount: Variable that supposedly holds a count;
 #                             i.e. a value that is an integer greater than zero.
 # MODIFIES                  : Nothing
 # RETURNS                   : $true if the value specified is an integer that
