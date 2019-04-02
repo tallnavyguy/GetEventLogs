@@ -51,11 +51,11 @@ param (
     [Parameter(Mandatory = $false, ValueFromPipeline = $true)][string]$LogName = "Security",
     [Parameter(Mandatory = $false, ValueFromPipeline = $true)][int]$Id = 4657,
     [Parameter(Mandatory = $false, ValueFromPipeline = $true)][DateTime]$FromDate = [DateTime]::MinValue,
-    [Parameter(Mandatory = $false, ValueFromPipeline = $true)][DateTime]$ToDate = Get-Date,
+    [Parameter(Mandatory = $false, ValueFromPipeline = $true)][DateTime]$ToDate = (Get-Date),
     [Parameter(Mandatory = $false,  ValueFromPipeline = $true)][int]$DesiredCount = 1,
     [Parameter(Mandatory = $true,  ValueFromPipeline = $true)][string]$CsvPath = "",
     [Parameter(Mandatory = $false,  ValueFromPipeline = $true)][string]$RemoteServers = "localhost",
-    [Parameter(Mandatory = $false,  ValueFromPipeline = $true)][switch]$SortAscendingByTime = $false,
+    [Parameter(Mandatory = $false,  ValueFromPipeline = $true)][switch]$SortAscendingByTime = $false
  )
 
 ###############################################################################
