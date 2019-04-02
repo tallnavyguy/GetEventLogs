@@ -169,9 +169,9 @@ function ParseDesiredCount {
         Return
     }
 
-    $DesiredCountParam = "-Newest {0}" -f $DesiredCount
+    $DesiredCountParam = "-Newest {0} " -f $DesiredCount
 
-    $global:CmdToInvoke = $global:CmdToInvoke + ' ' + $DesiredCountParam
+    $global:CmdToInvoke = $global:CmdToInvoke + $DesiredCountParam
 }
 
 ###############################################################################
