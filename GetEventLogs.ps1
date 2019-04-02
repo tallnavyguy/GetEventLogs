@@ -5,9 +5,8 @@
 # AUTHOR                    : Brian Hart
 # DESCRIPTION               : A simple PowerShell script that manages getting event logs from the 
 #                             Windows Event Log system and then exports them as CSV.  The columns
-#                             written to the CSV are: 
+#                             written to the CSV are UserName and TimeGenerated.
 #
-
 # COMMAND-LINE ARGS         
 # -LogName <Log>            : (Optional).  If specified, may be Application, Setup, System, or 
 #                             Security.  Security log is the default.  These correspond to the
