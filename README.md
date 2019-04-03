@@ -17,15 +17,15 @@ To execute this script, call:
 # Example
 An example of calling this script successfully is as follows:
 ```
-PS C:\Users\Navy\source\repos\GetEventLogs> .\GetEventLogs.ps1 -CsvPath .\a.csv -DesiredCount 100
+PS C:\Users\WorstAstro\source\repos\GetEventLogs> .\GetEventLogs.ps1 -CsvPath .\a.csv -DesiredCount 100
 Getting all events logged on or before 4/2/2019 at 3:56 PM...
 ```
 This call produces the file ```a.csv``` in the current directory:
 ```
-PS C:\Users\Navy\source\repos\GetEventLogs> dir
+PS C:\Users\WorstAstro\source\repos\GetEventLogs> dir
 
 
-    Directory: C:\Users\Navy\source\repos\GetEventLogs
+    Directory: C:\Users\WorstAstro\source\repos\GetEventLogs
 
 
 Mode                LastWriteTime         Length Name
